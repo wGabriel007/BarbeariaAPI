@@ -1,0 +1,62 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Barbearia.Application\Barbearia.Application.csproj" />
+    <ProjectReference Include="..\Barbearia.Domain\Barbearia.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embute os arquivos de MIGRAÇÃO (não o 01_schema.sql/02_seed.sql,
+         que são só pra criar um banco do zero, na mão, uma vez) direto
+         de /database — a mesma pasta que já existia, sem duplicar
+         conteúdo — pra dentro do próprio .dll. É o que permite o
+         MigrationRunner (ver Persistence/MigrationRunner.cs) encontrá-
+         los em tempo de execução sem depender de onde a Api foi
+         publicada/rodada a partir de. O LogicalName garante um nome
+         previsível ("Barbearia.Infrastructure.Migracoes.<arquivo>"),
+         em vez do namespace-baseado-em-pasta que o EF usaria por padrão. -->
+    <EmbeddedResource Include="../../../database/*_migracao_*.sql">
+      <LogicalName>Barbearia.Infrastructure.Migracoes.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="..\..\..\database\03_migracao_tipo_comum.sql" />
+    <EmbeddedResource Remove="..\..\..\database\04_migracao_solicitacao_agendamento.sql" />
+    <EmbeddedResource Remove="..\..\..\database\05_migracao_ausencia_barbeiro.sql" />
+    <EmbeddedResource Remove="..\..\..\database\06_migracao_solicitacao_plano.sql" />
+    <EmbeddedResource Remove="..\..\..\database\07_migracao_categoria_servico.sql" />
+    <EmbeddedResource Remove="..\..\..\database\08_migracao_perfil_usuario.sql" />
+    <EmbeddedResource Remove="..\..\..\database\09_migracao_configuracao_site.sql" />
+    <EmbeddedResource Remove="..\..\..\database\10_migracao_ranking.sql" />
+    <EmbeddedResource Remove="..\..\..\database\11_migracao_data_vencimento.sql" />
+    <EmbeddedResource Remove="..\..\..\database\12_migracao_perfil_barbearia.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- EF Core "core" (DbContext, LINQ, change tracking) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+    <!-- Provider específico do Postgres (traduz LINQ -> SQL do Postgres, mapeia DateOnly/TimeOnly/decimal etc.) -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <!-- Sem isso, teríamos que escrever .ToTable("usuarios"), .HasColumnName("nome_completo")
+         em TODA propriedade de TODA entidade. Este pacote faz EF Core traduzir PascalCase -> snake_case
+         automaticamente (Usuario -> usuarios, NomeCompleto -> nome_completo), casando exatamente
+         com os nomes do 01_schema.sql. -->
+    <PackageReference Include="EFCore.NamingConventions" Version="8.0.3" />
+    <!-- Hash de senha (BCrypt) -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <!-- Gera o JWT (JwtSecurityTokenHandler). Só a GERAÇÃO do token mora
+         aqui — a VALIDAÇÃO (o middleware que confere o token em cada
+         requisição) é responsabilidade da Api, configurada com o pacote
+         Microsoft.AspNetCore.Authentication.JwtBearer, que é específico
+         de ASP.NET Core e por isso não entra na Infrastructure. -->
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
+  </ItemGroup>
+
+</Project>

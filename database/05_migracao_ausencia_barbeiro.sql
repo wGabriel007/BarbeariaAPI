@@ -1,0 +1,24 @@
+-- =====================================================================
+-- Migração pontual: status "Ausente" (de folga hoje) pro barbeiro.
+--
+-- Só é necessária se você já criou seu banco a partir do 01_schema.sql
+-- ANTES desta mudança. Se você está criando o banco pela primeira vez,
+-- ignore este arquivo — o 01_schema.sql já vem com tudo isso incluído.
+--
+-- O que muda:
+--   barbeiros ganha a coluna "ausente" (boolean) — À PARTE do "status"
+--   que já existia (Ativo/Inativo/Bloqueado). O próprio barbeiro liga
+--   isso quando quer se ausentar (ex.: folga, férias, atestado) e
+--   desliga quando volta — enquanto ligado, ele deixa de aparecer pra
+--   Comum/Cliente escolherem na hora de pedir um agendamento (mas
+--   continua logando e usando o resto do sistema normalmente, diferente
+--   de Inativo/Bloqueado).
+--
+-- Você não precisa rodar isto manualmente: a própria Api aplica
+-- automaticamente qualquer migração pendente (arquivos "NN_migracao_*.sql"
+-- desta pasta) assim que sobe — ver Barbearia.Infrastructure/
+-- Persistence/MigrationRunner.cs. Rodar manualmente também funciona, se
+-- preferir (o comando de sempre: psql -U postgres -d barbearia -f
+-- 05_migracao_ausencia_barbeiro.sql).
+
+ALTER TABLE barbeiros ADD COLUMN IF NOT EXISTS ausente BOOLEAN NOT NULL DEFAULT false;

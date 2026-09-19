@@ -1,0 +1,21 @@
+-- =====================================================================
+-- Migração pontual: categoria do serviço (Corte, Barba, Combo, etc.),
+-- só pra organizar a tela de Serviços — não afeta preço, duração nem
+-- nenhuma regra de agendamento/plano.
+--
+-- Só é necessária se você já criou seu banco a partir do 01_schema.sql
+-- ANTES desta mudança. Se você está criando o banco pela primeira vez,
+-- ignore este arquivo — o 01_schema.sql já vem com tudo isso incluído.
+--
+-- MAPA (replicar exatamente em Barbearia.Domain.Enums.CategoriaServico):
+--   0=Corte  1=Barba  2=ComboCorteEBarba  3=Sobrancelha  4=Coloracao
+--   5=Tratamento  6=Outro
+--
+-- Serviços já cadastrados nascem como 6=Outro (default) — dá pra
+-- reclassificar cada um depois pela tela (PATCH /api/servicos/{id}/categoria).
+--
+-- Você não precisa rodar isto manualmente: a própria Api aplica
+-- automaticamente qualquer migração pendente assim que sobe — ver
+-- Barbearia.Infrastructure/Persistence/MigrationRunner.cs.
+
+ALTER TABLE servicos ADD COLUMN IF NOT EXISTS categoria INT NOT NULL DEFAULT 6 CHECK (categoria IN (0, 1, 2, 3, 4, 5, 6));

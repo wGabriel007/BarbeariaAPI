@@ -1,0 +1,74 @@
+@Barbearia.Api_HostAddress = http://localhost:5042
+
+### Listar serviços do catálogo
+GET {{Barbearia.Api_HostAddress}}/api/servicos
+Accept: application/json
+
+###
+
+### Criar um serviço
+POST {{Barbearia.Api_HostAddress}}/api/servicos
+Content-Type: application/json
+
+{
+  "nome": "Corte Masculino",
+  "descricao": "Corte tradicional",
+  "duracaoMinutos": 30,
+  "preco": 40.00
+}
+
+###
+
+### Criar um cliente
+POST {{Barbearia.Api_HostAddress}}/api/clientes
+Content-Type: application/json
+
+{
+  "nomeCompleto": "João da Silva",
+  "telefone": "11999990000",
+  "email": "joao@example.com",
+  "cpf": "12345678900",
+  "dataNascimento": "1995-04-12",
+  "observacoes": null
+}
+
+###
+
+### Criar um usuário do tipo Barbeiro (pré-requisito para criar um Barbeiro)
+POST {{Barbearia.Api_HostAddress}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nomeCompleto": "Carlos Barbeiro",
+  "email": "carlos@barbearia.com",
+  "senha": "SenhaForte123!",
+  "tipo": "Barbeiro"
+}
+
+###
+
+### Criar o cadastro de Barbeiro (troque usuarioId pelo id retornado acima)
+POST {{Barbearia.Api_HostAddress}}/api/barbeiros
+Content-Type: application/json
+
+{
+  "usuarioId": 1,
+  "telefone": "11988887777"
+}
+
+###
+
+### Criar um agendamento (troque os ids pelos que você criou)
+POST {{Barbearia.Api_HostAddress}}/api/agendamentos
+Content-Type: application/json
+
+{
+  "clienteId": 1,
+  "barbeiroId": 1,
+  "servicoId": 1,
+  "inicio": "2026-09-20T14:00:00-03:00",
+  "assinaturaId": null,
+  "observacoes": null
+}
+
+###

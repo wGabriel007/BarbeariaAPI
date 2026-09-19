@@ -1,0 +1,11 @@
+# Build
+bin/
+obj/
+
+# Segredos locais — NUNCA commitar (ver LEIA-ME.md)
+**/.env
+*.user
+
+# IDE
+.vs/
+.idea/

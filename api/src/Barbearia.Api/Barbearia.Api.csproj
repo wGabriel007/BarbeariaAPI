@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <!-- Middleware que VALIDA o JWT em cada requisição (a GERAÇÃO do
+         token mora na Infrastructure — ver JwtTokenGenerator). -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+    <!-- Lê um arquivo .env (igual ao do front, em frontend/.env) e copia
+         cada linha pra uma variável de ambiente do processo — é o que
+         permite configurar a connection string e a chave do JWT com
+         ".env" em vez de dotnet user-secrets. Ver Program.cs. -->
+    <PackageReference Include="DotNetEnv" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Barbearia.Application\Barbearia.Application.csproj" />
+    <ProjectReference Include="..\Barbearia.Infrastructure\Barbearia.Infrastructure.csproj" />
+    <ProjectReference Include="..\Barbearia.Domain\Barbearia.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
