@@ -15,11 +15,21 @@ public enum TipoUsuario
 
     /// <summary>
     /// Papel padrão de quem se autocadastra pelo /cadastro — só a
-    /// PRIMEIRA conta do sistema vira Admin automaticamente (ver
-    /// AutenticacaoService.FnRegistrarAsync); todo autocadastro seguinte
+    /// PRIMEIRA conta de CADA barbearia (empresa) vira Admin automaticamente
+    /// (ver AutenticacaoService.FnRegistrarAsync); todo autocadastro seguinte
     /// nasce Comum. Um Admin promove alguém depois, se precisar (não
     /// há tela pra isso ainda — troca de tipo continua manual no banco
     /// por enquanto).
     /// </summary>
-    Comum = 2
+    Comum = 2,
+
+    /// <summary>
+    /// Dono da PLATAFORMA (não de uma barbearia específica) — cadastra e
+    /// ativa/desativa barbearias (Empresa), não tem EmpresaId (ver
+    /// Usuario.EmpresaId, nullable exatamente por causa deste caso) e
+    /// nunca aparece nas telas de gestão de UMA barbearia. Entra por um
+    /// login separado (ver AuthController.FnLoginSuperAdmin) — nasce só
+    /// via SQL direto (não existe autocadastro pra este papel).
+    /// </summary>
+    SuperAdmin = 3
 }

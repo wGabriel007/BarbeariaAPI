@@ -21,6 +21,19 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(u => u.CriadoEm).HasDefaultValueSql("now()").ValueGeneratedOnAdd();
         builder.Property(u => u.AtualizadoEm).HasDefaultValueSql("now()").ValueGeneratedOnAddOrUpdate();
 
-        builder.HasIndex(u => u.Email).IsUnique();
+        // Email único DENTRO de cada barbearia, não mais globalmente —
+        // duas barbearias diferentes podem ter, cada uma, um usuário com
+        // o mesmo email (ver ux_usuarios_empresa_email/
+        // ux_usuarios_email_superadmin em 13_migracao_multi_barbearia.sql
+        // pro porquê de serem dois índices parciais, não um só).
+        builder.HasIndex(u => new { u.EmpresaId, u.Email })
+            .IsUnique()
+            .HasFilter("empresa_id IS NOT NULL")
+            .HasDatabaseName("ux_usuarios_empresa_email");
+
+        builder.HasIndex(u => u.Email)
+            .IsUnique()
+            .HasFilter("empresa_id IS NULL")
+            .HasDatabaseName("ux_usuarios_email_superadmin");
     }
 }

@@ -14,7 +14,13 @@ public class PlanoAssinaturaConfiguration : IEntityTypeConfiguration<PlanoAssina
 
         builder.Property(p => p.PrecoMensal).HasPrecision(10, 2);
 
-        builder.HasIndex(p => p.Nome).IsUnique();
+        // Nome único DENTRO de cada barbearia — mesmo raciocínio do
+        // ServicoConfiguration ("Plano Mensal" vai se repetir entre
+        // barbearias; ver ux_planos_assinatura_empresa_nome em
+        // 13_migracao_multi_barbearia.sql).
+        builder.HasIndex(p => new { p.EmpresaId, p.Nome })
+            .IsUnique()
+            .HasDatabaseName("ux_planos_assinatura_empresa_nome");
 
         builder.Navigation(p => p.ServicosInclusos).UsePropertyAccessMode(PropertyAccessMode.Field);
 

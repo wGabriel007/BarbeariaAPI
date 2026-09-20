@@ -59,7 +59,11 @@ public class SolicitacaoPlanoService
         if (plano.Status != StatusRegistro.Ativo)
             throw new DomainException("Este plano não está mais disponível.");
 
+        var usuario = await _usuarios.FnObterPorIdAsync(usuarioId, ct)
+            ?? throw NotFoundException.FnPara("Usuario", usuarioId);
+
         var solicitacao = SolicitacaoPlano.FnCriar(usuarioId, request.PlanoId, request.Email, request.Telefone);
+        solicitacao.FnAtribuirEmpresa(usuario.EmpresaId!.Value);
 
         await _solicitacoes.FnAdicionarAsync(solicitacao, ct);
         await _uow.FnSalvarAsync(ct);
@@ -95,6 +99,7 @@ public class SolicitacaoPlanoService
         cliente.FnAtualizarDados(cliente.NomeCompleto, solicitacao.Telefone, solicitacao.Email, cliente.Observacoes);
 
         var assinatura = Assinatura.FnCriar(cliente.Id, solicitacao.PlanoId, request.DataInicio, request.DataVencimento);
+        assinatura.FnAtribuirEmpresa(cliente.EmpresaId);
         await _assinaturas.FnAdicionarAsync(assinatura, ct);
         await _uow.FnSalvarAsync(ct); // precisa do Id gerado da assinatura antes de usar em FnAceitar
 
@@ -131,6 +136,7 @@ public class SolicitacaoPlanoService
             ?? throw NotFoundException.FnPara("Usuario", usuarioId);
 
         cliente = Cliente.FnCriar(usuario.NomeCompleto, telefone: null, email: usuario.Email, usuarioId: usuarioId);
+        cliente.FnAtribuirEmpresa(usuario.EmpresaId!.Value);
         await _clientes.FnAdicionarAsync(cliente, ct);
         await _uow.FnSalvarAsync(ct);
 

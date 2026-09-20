@@ -23,6 +23,9 @@ public class SolicitacaoPlano : AuditableEntity
     /// <summary>Preenchido só quando Aceita — a assinatura que nasceu a partir deste pedido.</summary>
     public long? AssinaturaId { get; private set; }
 
+    /// <summary>Barbearia (Empresa) dona deste pedido — sempre igual ao EmpresaId do Usuario que pediu (ver FnAtribuirEmpresa).</summary>
+    public long EmpresaId { get; private set; }
+
     private SolicitacaoPlano()
     {
     }
@@ -68,5 +71,17 @@ public class SolicitacaoPlano : AuditableEntity
 
         Status = StatusSolicitacaoPlano.Rejeitada;
         MensagemResposta = mensagem;
+    }
+
+    /// <summary>Chamado uma única vez, logo após FnCriar, sempre com o EmpresaId do Usuario que fez o pedido.</summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId != 0)
+            throw new DomainException("Esta solicitação já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        EmpresaId = empresaId;
     }
 }

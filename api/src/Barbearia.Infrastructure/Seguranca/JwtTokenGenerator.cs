@@ -24,13 +24,20 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         // depois (ex.: [Authorize(Roles = "Admin")]), sem precisar
         // consultar o banco de novo em cada requisição — o token já
         // "carrega" quem é a pessoa e qual o tipo dela.
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
-            new Claim(ClaimTypes.Name, usuario.NomeCompleto),
-            new Claim(ClaimTypes.Role, usuario.Tipo.ToString()),
+            new(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, usuario.Email),
+            new(ClaimTypes.Name, usuario.NomeCompleto),
+            new(ClaimTypes.Role, usuario.Tipo.ToString()),
         };
+
+        // "empresa_id" = a claim que ICurrentTenantService/EmpresaResolverMiddleware
+        // (ver Barbearia.Api) lê pra saber de qual barbearia é este token —
+        // ausente só pro SuperAdmin (ver Usuario.EmpresaId, nullable
+        // exatamente por causa dele).
+        if (usuario.EmpresaId.HasValue)
+            claims.Add(new Claim("empresa_id", usuario.EmpresaId.Value.ToString()));
 
         var chave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var credenciais = new SigningCredentials(chave, SecurityAlgorithms.HmacSha256);

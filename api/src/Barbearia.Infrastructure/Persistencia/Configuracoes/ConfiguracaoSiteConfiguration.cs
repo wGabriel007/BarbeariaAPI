@@ -8,11 +8,14 @@ public class ConfiguracaoSiteConfiguration : IEntityTypeConfiguration<Configurac
 {
     public void Configure(EntityTypeBuilder<ConfiguracaoSite> builder)
     {
-        // Diferente de toda outra entidade (BIGINT GENERATED ALWAYS AS
-        // IDENTITY): aqui o Id é sempre o mesmo valor fixo (ConfiguracaoSite.IdUnico),
-        // já inserido pela migração — o EF Core nunca deve tentar gerar
-        // um novo Id sozinho pra isto.
-        builder.Property(c => c.Id).ValueGeneratedNever();
+        // Desde o multi-tenant (ver 14_migracao_multi_barbearia.sql), esta
+        // tabela passou a ter uma linha POR BARBEARIA — igual toda outra
+        // entidade, com Id gerado normalmente (antes, com uma linha global
+        // só, o Id era sempre fixo em 1 e ValueGeneratedNever — não é mais
+        // o caso).
+        builder.Property(c => c.Id).UseIdentityAlwaysColumn();
+
+        builder.HasIndex(c => c.EmpresaId).IsUnique();
 
         // Fotos é exposta como IReadOnlyCollection<T> por fora, mas o
         // campo de verdade é List<T> (_fotos) — mesma nota de

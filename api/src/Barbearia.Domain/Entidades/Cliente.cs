@@ -30,6 +30,9 @@ public class Cliente : AuditableEntity
     /// </summary>
     public long? UsuarioId { get; private set; }
 
+    /// <summary>Barbearia (Empresa) dona deste cadastro de cliente — ver Usuario.EmpresaId e FnAtribuirEmpresa.</summary>
+    public long EmpresaId { get; private set; }
+
     private Cliente()
     {
     }
@@ -73,4 +76,16 @@ public class Cliente : AuditableEntity
     public void FnAtivar() => Status = StatusRegistro.Ativo;
     public void FnInativar() => Status = StatusRegistro.Inativo;
     public void FnBloquear() => Status = StatusRegistro.Bloqueado;
+
+    /// <summary>Chamado uma única vez, logo após FnCriar — ver Usuario.FnAtribuirEmpresa.</summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId != 0)
+            throw new DomainException("Este cliente já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        EmpresaId = empresaId;
+    }
 }

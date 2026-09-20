@@ -1,3 +1,4 @@
+using Barbearia.Application.Abstracoes;
 using Barbearia.Domain.Entidades;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,13 +32,25 @@ namespace Barbearia.Infrastructure.Persistencia;
 /// </summary>
 public class BarbeariaDbContext : DbContext
 {
-    public BarbeariaDbContext(DbContextOptions<BarbeariaDbContext> options) : base(options)
+    // Injetado (Scoped, igual o próprio DbContext) — ver comentário
+    // completo em ICurrentTenantService sobre quem implementa isto e
+    // como é resolvido a cada requisição. Guardado num campo pra poder
+    // ser referenciado dentro dos HasQueryFilter em OnModelCreating (uma
+    // classe IEntityTypeConfiguration<T> não serve pra isto, porque o EF
+    // Core instancia essas classes sozinho via reflexão, sem injeção de
+    // dependência — por isso os filtros multi-tenant moram AQUI, não em
+    // Persistencia/Configuracoes/*.cs).
+    private readonly ICurrentTenantService _tenant;
+
+    public BarbeariaDbContext(DbContextOptions<BarbeariaDbContext> options, ICurrentTenantService tenant) : base(options)
     {
+        _tenant = tenant;
     }
 
     // O nome de cada DbSet é o que define o nome da tabela (depois de
     // passar pela convenção snake_case) — por isso os nomes abaixo
     // batem exatamente com os nomes das tabelas no 01_schema.sql.
+    public DbSet<Empresa> Empresas => Set<Empresa>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Barbeiro> Barbeiros => Set<Barbeiro>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
@@ -61,5 +74,41 @@ public class BarbeariaDbContext : DbContext
         // em vez de configurar tudo aqui dentro — mantém este arquivo
         // pequeno e cada configuração isolada por entidade.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(BarbeariaDbContext).Assembly);
+
+        // -----------------------------------------------------------------
+        // Isolamento multi-tenant (ver 14_migracao_multi_barbearia.sql e
+        // ICurrentTenantService) — UM HasQueryFilter por entidade que tem
+        // EmpresaId. A partir daqui, TODA consulta LINQ feita através
+        // deste DbContext (inclusive as que já existiam em cada
+        // Repositorio, sem precisar mudar nenhuma) devolve só as linhas
+        // da barbearia da requisição atual — automaticamente. Comparação
+        // com EmpresaId (long) de um lado e _tenant.EmpresaId (long?) do
+        // outro: se _tenant.EmpresaId for null (barbearia não resolvida),
+        // a comparação nunca bate com nada — seguro por padrão.
+        //
+        // EhSuperAdmin ignora o filtro (usado por EmpresaService, que
+        // administra a tabela empresas em si — Empresa não entra
+        // aqui porque ELA é a raiz do isolamento, não algo isolado).
+        //
+        // Se algum dia isto precisar ser "furado" de propósito (ex.: um
+        // relatório cross-tenant do SuperAdmin), use
+        // .IgnoreQueryFilters() na consulta específica — nunca remova o
+        // filtro daqui.
+        modelBuilder.Entity<Usuario>().HasQueryFilter(u => _tenant.EhSuperAdmin || u.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<Cliente>().HasQueryFilter(c => _tenant.EhSuperAdmin || c.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<Barbeiro>().HasQueryFilter(b => _tenant.EhSuperAdmin || b.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<Servico>().HasQueryFilter(s => _tenant.EhSuperAdmin || s.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<PlanoAssinatura>().HasQueryFilter(p => _tenant.EhSuperAdmin || p.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<Assinatura>().HasQueryFilter(a => _tenant.EhSuperAdmin || a.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<Agendamento>().HasQueryFilter(a => _tenant.EhSuperAdmin || a.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<Pagamento>().HasQueryFilter(p => _tenant.EhSuperAdmin || p.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<SolicitacaoPlano>().HasQueryFilter(s => _tenant.EhSuperAdmin || s.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<ConfiguracaoSite>().HasQueryFilter(c => _tenant.EhSuperAdmin || c.EmpresaId == _tenant.EmpresaId);
+        modelBuilder.Entity<PremioRanking>().HasQueryFilter(p => _tenant.EhSuperAdmin || p.EmpresaId == _tenant.EmpresaId);
+
+        // PlanoServico, HorarioTrabalho, BloqueioAgenda e FotoBarbearia NÃO
+        // têm EmpresaId próprio de propósito — são sempre acessados só
+        // através da entidade "pai" já filtrada (PlanoAssinatura, Barbeiro,
+        // ConfiguracaoSite), nunca consultados soltos por um Repositorio.
     }
 }

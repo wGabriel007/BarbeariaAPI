@@ -52,6 +52,7 @@ public class ClienteService
             throw new DomainException("Este usuário já é um barbeiro.");
 
         var cliente = Cliente.FnCriar(usuario.NomeCompleto, telefone: null, email: usuario.Email, usuarioId: usuario.Id);
+        cliente.FnAtribuirEmpresa(usuario.EmpresaId!.Value);
 
         await _repositorio.FnAdicionarAsync(cliente, ct);
         await _uow.FnSalvarAsync(ct);

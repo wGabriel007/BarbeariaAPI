@@ -10,6 +10,9 @@ public class PlanoAssinatura : AuditableEntity
     public decimal PrecoMensal { get; private set; }
     public StatusRegistro Status { get; private set; }
 
+    /// <summary>Barbearia (Empresa) dona deste plano — ver Usuario.EmpresaId e FnAtribuirEmpresa.</summary>
+    public long EmpresaId { get; private set; }
+
     // Ver nota equivalente em Barbeiro.cs sobre não usar .AsReadOnly() aqui.
     private readonly List<PlanoServico> _servicosInclusos = new();
     public IReadOnlyCollection<PlanoServico> ServicosInclusos => _servicosInclusos;
@@ -62,4 +65,16 @@ public class PlanoAssinatura : AuditableEntity
     public void FnAtivar() => Status = StatusRegistro.Ativo;
     public void FnInativar() => Status = StatusRegistro.Inativo;
     public void FnBloquear() => Status = StatusRegistro.Bloqueado;
+
+    /// <summary>Chamado uma única vez, logo após FnCriar — ver Usuario.FnAtribuirEmpresa.</summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId != 0)
+            throw new DomainException("Este plano já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        EmpresaId = empresaId;
+    }
 }

@@ -12,6 +12,9 @@ public class Servico : AuditableEntity
     public CategoriaServico Categoria { get; private set; }
     public StatusRegistro Status { get; private set; }
 
+    /// <summary>Barbearia (Empresa) dona deste serviço — ver Usuario.EmpresaId e FnAtribuirEmpresa.</summary>
+    public long EmpresaId { get; private set; }
+
     private Servico()
     {
     }
@@ -57,4 +60,16 @@ public class Servico : AuditableEntity
     public void FnAtivar() => Status = StatusRegistro.Ativo;
     public void FnInativar() => Status = StatusRegistro.Inativo;
     public void FnBloquear() => Status = StatusRegistro.Bloqueado;
+
+    /// <summary>Chamado uma única vez, logo após FnCriar — ver Usuario.FnAtribuirEmpresa.</summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId != 0)
+            throw new DomainException("Este serviço já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        EmpresaId = empresaId;
+    }
 }

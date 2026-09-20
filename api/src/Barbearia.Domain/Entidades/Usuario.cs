@@ -23,6 +23,16 @@ public class Usuario : AuditableEntity
     public TipoUsuario Tipo { get; private set; }
     public StatusRegistro Status { get; private set; }
 
+    /// <summary>
+    /// Qual barbearia (Empresa) este usuário pertence — nullable de
+    /// propósito: só o SuperAdmin (dono da plataforma, ver TipoUsuario)
+    /// não pertence a nenhuma barbearia específica; Admin/Barbeiro/Comum
+    /// sempre têm um valor aqui (ver FnAtribuirEmpresa, chamado logo
+    /// depois de FnCriar em todo fluxo de cadastro normal — ver
+    /// AutenticacaoService/UsuarioService).
+    /// </summary>
+    public long? EmpresaId { get; private set; }
+
     /// <summary>Contato pessoal (aba "Meu perfil") — separado do telefone de Cliente/Barbeiro, que são cadastros à parte.</summary>
     public string? Telefone { get; private set; }
 
@@ -92,6 +102,39 @@ public class Usuario : AuditableEntity
         NomeCompleto = nomeCompleto.Trim();
         Email = email.Trim().ToLowerInvariant();
         Telefone = string.IsNullOrWhiteSpace(telefone) ? null : telefone.Trim();
+    }
+
+    /// <summary>
+    /// Liga este usuário a uma barbearia — chamado uma única vez, logo
+    /// após FnCriar (nunca depois: trocar um usuário de barbearia não é
+    /// um caso de uso suportado). Ficar de fora só é normal pro
+    /// SuperAdmin (ver EmpresaId).
+    /// </summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId.HasValue)
+            throw new DomainException("Este usuário já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        // Trava de segurança, não só de dado: um SuperAdmin COM EmpresaId
+        // preenchido seria um estado contraditório que o resto do sistema
+        // não sabe lidar com segurança — EmpresaResolverMiddleware olha
+        // pro Role "SuperAdmin" do token e, se for esse o caso, IGNORA
+        // qualquer empresa_id (marca EhSuperAdmin=true e segue, vendo
+        // TODAS as barbearias — ver HasQueryFilter em BarbeariaDbContext).
+        // Ou seja: se algum caminho de código (ex.: um bug futuro em
+        // UsuarioService.FnCriarAsync deixando alguém criar um usuário já
+        // nascendo Tipo=SuperAdmin pela tela normal de "Usuários" de uma
+        // barbearia) conseguisse chamar isto aqui num SuperAdmin, o
+        // resultado seria alguém com acesso de SuperAdmin (todas as
+        // barbearias) attachado, sem sentido, a UMA barbearia específica —
+        // por isso este método recusa de propósito, não só a Application.
+        if (Tipo == TipoUsuario.SuperAdmin)
+            throw new DomainException("Um SuperAdmin não pode pertencer a uma barbearia.");
+
+        EmpresaId = empresaId;
     }
 
     public void FnDefinirFoto(string fotoUrl) => FotoUrl = fotoUrl;

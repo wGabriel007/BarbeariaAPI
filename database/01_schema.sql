@@ -518,3 +518,74 @@ CREATE TABLE premios_ranking (
 CREATE TRIGGER trg_premios_ranking_atualizado
   BEFORE UPDATE ON premios_ranking
   FOR EACH ROW EXECUTE FUNCTION atualizar_timestamp();
+
+-- =====================================================================
+-- Registro de migrações já cobertas por este schema.
+--
+-- Este arquivo já nasce com TUDO que as migrações incrementais
+-- (database/NN_migracao_*.sql) fariam num banco mais antigo — é assim
+-- que cada uma delas se apresenta ("só é necessária se você já criou seu
+-- banco ANTES desta mudança; criando do zero, ignore este arquivo").
+--
+-- Mas o MigrationRunner (ver Barbearia.Infrastructure/Persistencia/
+-- MigrationRunner.cs) não tem como adivinhar isso sozinho: ele só sabe o
+-- que já rodou olhando a tabela migracoes_aplicadas. Sem este INSERT, um
+-- banco criado direto deste 01_schema.sql nasce com essa tabela vazia, e
+-- a Api tentaria reaplicar cada migração por cima de uma estrutura que
+-- já as tem — na melhor das hipóteses um no-op (graças ao "IF NOT
+-- EXISTS"/DO $$ de cada uma), na pior um erro de "já existe" (foi o que
+-- aconteceu com o gatilho de premios_ranking, antes de ele ganhar essa
+-- mesma proteção).
+--
+-- Criar a tabela aqui também (com "IF NOT EXISTS") é seguro: é a mesma
+-- criação que o MigrationRunner faz sozinho ao subir, só que adiantada.
+--
+-- IMPORTANTE pra quem for mexer no schema depois: toda vez que uma nova
+-- migração "NN_migracao_*.sql" for criada E incorporada aqui no
+-- 01_schema.sql (regenerando este arquivo pra refletir o estado final),
+-- o nome dela precisa ser adicionado na lista abaixo também — senão um
+-- banco novo, criado direto daqui, ficaria com esse gatilho ligado de
+-- novo pra tentar reaplicar algo que já está presente.
+-- =====================================================================
+
+CREATE TABLE IF NOT EXISTS migracoes_aplicadas (
+  nome_arquivo VARCHAR(255) PRIMARY KEY,
+  aplicado_em  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO migracoes_aplicadas (nome_arquivo) VALUES
+  ('03_migracao_tipo_comum.sql'),
+  ('04_migracao_solicitacao_agendamento.sql'),
+  ('05_migracao_ausencia_barbeiro.sql'),
+  ('06_migracao_solicitacao_plano.sql'),
+  ('07_migracao_categoria_servico.sql'),
+  ('08_migracao_perfil_usuario.sql'),
+  ('09_migracao_configuracao_site.sql'),
+  ('10_migracao_ranking.sql'),
+  ('11_migracao_data_vencimento.sql'),
+  ('12_migracao_perfil_barbearia.sql')
+ON CONFLICT (nome_arquivo) DO NOTHING;
+
+-- =====================================================================
+-- EXCEÇÃO DELIBERADA: 13_migracao_multi_barbearia.sql (modelo
+-- multi-barbearia/multi-tenant) NÃO está incorporada acima nas
+-- CREATE TABLE deste arquivo, e o nome dela também NÃO entra na lista
+-- de INSERT acima — diferente de toda migração anterior (03-12).
+--
+-- Motivo: 13_migracao_multi_barbearia.sql é bem mais complexa que as
+-- anteriores (cria tabela nova, mexe em índices únicos existentes,
+-- converte uma coluna de id pra identity) e, sem conseguir compilar/
+-- rodar testes neste ambiente, o risco de reescrever tudo isso "na mão"
+-- aqui de novo — e os dois arquivos saírem sutilmente diferentes um do
+-- outro — é maior do que o benefício de pular sua execução num banco
+-- novo. Ela já é 100% idempotente (todo ADD COLUMN/CREATE INDEX/etc é
+-- "IF NOT EXISTS"), então deixá-la de fora desta lista só significa que
+-- um banco criado do zero a partir deste 01_schema.sql também vai
+-- rodá-la de verdade na primeira subida da Api (MigrationRunner vê que
+-- '13_migracao_multi_barbearia.sql' não está em migracoes_aplicadas) —
+-- o que é seguro e correto, só um pouco mais lento que pular. QUALQUER
+-- migração 13+ que vier depois desta deve seguir a mesma regra: só
+-- volte a "assar" migrações neste 01_schema.sql (e marcá-las na lista
+-- acima) se/quando este projeto ganhar um jeito de compilar e testar de
+-- verdade antes de mexer nisso.
+-- =====================================================================

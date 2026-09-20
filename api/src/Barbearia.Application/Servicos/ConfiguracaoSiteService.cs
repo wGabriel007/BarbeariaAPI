@@ -9,11 +9,16 @@ namespace Barbearia.Application.Servicos;
 /// <summary>
 /// Marca/aparência do site (nome exibido, logo, cor de destaque) e as
 /// informações públicas do negócio (descrição, endereço, telefone,
-/// Instagram, horário de funcionamento, galeria de fotos). Uma linha só
-/// no banco (ver ConfiguracaoSite.IdUnico) — não tem "CriarAsync" nem
-/// "ListarAsync" de propósito, só leitura (qualquer um, inclusive
-/// deslogado) e alteração — nome/logo/cor é só Admin, as informações/
-/// fotos são Admin OU Barbeiro (ver ConfiguracaoSiteController).
+/// Instagram, horário de funcionamento, galeria de fotos). Uma linha
+/// POR BARBEARIA no banco (índice único em EmpresaId — ver
+/// ConfiguracaoSiteConfiguration/13_migracao_multi_barbearia.sql); a
+/// linha de cada barbearia nasce em EmpresaService.FnCriarAsync (via
+/// ConfiguracaoSite.FnCriarPadrao), então este Service não tem
+/// "CriarAsync" nem "ListarAsync" de propósito — só leitura (qualquer
+/// um, inclusive deslogado, sempre a da barbearia resolvida pelo
+/// EmpresaResolverMiddleware/query filter) e alteração — nome/logo/cor
+/// é só Admin, as informações/fotos são Admin OU Barbeiro (ver
+/// ConfiguracaoSiteController).
 /// </summary>
 public class ConfiguracaoSiteService
 {

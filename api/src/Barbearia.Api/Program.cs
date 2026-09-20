@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using Barbearia.Api.Middleware;
+using Barbearia.Api.Seguranca;
+using Barbearia.Application.Abstracoes;
 using Barbearia.Application.Servicos;
 using Barbearia.Infrastructure;
 using Barbearia.Infrastructure.Seguranca;
@@ -87,6 +89,19 @@ builder.Services.AddScoped<PagamentoService>();
 builder.Services.AddScoped<SolicitacaoPlanoService>();
 builder.Services.AddScoped<ConfiguracaoSiteService>();
 builder.Services.AddScoped<RankingService>();
+builder.Services.AddScoped<EmpresaService>();
+
+// ---------------------------------------------------------------------
+// Multi-tenant (ver ICurrentTenantService) — CurrentTenantService é
+// registrado pela CLASSE concreta (o EmpresaResolverMiddleware precisa
+// escrever nas propriedades, a interface só expõe leitura) e também pela
+// INTERFACE, apontando pra a mesma instância dentro do mesmo escopo —
+// é o que garante que o middleware e o BarbeariaDbContext (que só
+// conhece a interface) enxergam o EmpresaId resolvido na MESMA
+// requisição.
+// ---------------------------------------------------------------------
+builder.Services.AddScoped<CurrentTenantService>();
+builder.Services.AddScoped<ICurrentTenantService>(sp => sp.GetRequiredService<CurrentTenantService>());
 
 // ---------------------------------------------------------------------
 // Autenticação (JWT) — a Api só sabe VALIDAR o token aqui (assinatura,
@@ -236,6 +251,13 @@ app.UseStaticFiles();
 // Authorization decide "pode ou não" com base nisso. Na ordem trocada,
 // Authorization sempre veria um usuário anônimo.
 app.UseAuthentication();
+
+// Resolve qual barbearia é esta requisição (ver EmpresaResolverMiddleware) —
+// precisa vir depois de Authentication (lê a claim "empresa_id" do
+// token quando existe) e antes de QUALQUER coisa que toque o banco
+// através do BarbeariaDbContext (cujos HasQueryFilter dependem disto já
+// estar resolvido) — inclusive StatusUsuarioMiddleware logo abaixo.
+app.FnUseEmpresaResolver();
 
 // Depois de Authentication (precisa de HttpContext.User já preenchido) e
 // antes de Authorization: garante que um usuário bloqueado/inativo perde

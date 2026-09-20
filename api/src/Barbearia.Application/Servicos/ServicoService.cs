@@ -9,11 +9,13 @@ namespace Barbearia.Application.Servicos;
 public class ServicoService
 {
     private readonly IServicoRepository _repositorio;
+    private readonly ICurrentTenantService _tenant;
     private readonly IUnitOfWork _uow;
 
-    public ServicoService(IServicoRepository repositorio, IUnitOfWork uow)
+    public ServicoService(IServicoRepository repositorio, ICurrentTenantService tenant, IUnitOfWork uow)
     {
         _repositorio = repositorio;
+        _tenant = tenant;
         _uow = uow;
     }
 
@@ -23,6 +25,7 @@ public class ServicoService
             throw new DomainException($"Já existe um serviço chamado '{request.Nome}'.");
 
         var servico = Servico.FnCriar(request.Nome, request.DuracaoMinutos, request.Preco, request.Categoria, request.Descricao);
+        servico.FnAtribuirEmpresa(_tenant.EmpresaId!.Value);
 
         await _repositorio.FnAdicionarAsync(servico, ct);
         await _uow.FnSalvarAsync(ct);

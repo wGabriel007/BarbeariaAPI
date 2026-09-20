@@ -9,18 +9,21 @@ public class PlanoAssinaturaService
 {
     private readonly IPlanoAssinaturaRepository _planos;
     private readonly IServicoRepository _servicos;
+    private readonly ICurrentTenantService _tenant;
     private readonly IUnitOfWork _uow;
 
-    public PlanoAssinaturaService(IPlanoAssinaturaRepository planos, IServicoRepository servicos, IUnitOfWork uow)
+    public PlanoAssinaturaService(IPlanoAssinaturaRepository planos, IServicoRepository servicos, ICurrentTenantService tenant, IUnitOfWork uow)
     {
         _planos = planos;
         _servicos = servicos;
+        _tenant = tenant;
         _uow = uow;
     }
 
     public async Task<PlanoResponse> FnCriarAsync(CriarPlanoRequest request, CancellationToken ct = default)
     {
         var plano = PlanoAssinatura.FnCriar(request.Nome, request.PrecoMensal, request.Descricao);
+        plano.FnAtribuirEmpresa(_tenant.EmpresaId!.Value);
 
         await _planos.FnAdicionarAsync(plano, ct);
         await _uow.FnSalvarAsync(ct);

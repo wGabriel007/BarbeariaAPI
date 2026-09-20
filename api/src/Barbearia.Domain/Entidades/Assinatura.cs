@@ -25,6 +25,9 @@ public class Assinatura : AuditableEntity
 
     public StatusAssinatura Status { get; private set; }
 
+    /// <summary>Barbearia (Empresa) dona desta assinatura — sempre igual ao EmpresaId do Cliente (ver FnAtribuirEmpresa).</summary>
+    public long EmpresaId { get; private set; }
+
     private Assinatura()
     {
     }
@@ -83,5 +86,17 @@ public class Assinatura : AuditableEntity
             throw new DomainException("Só é possível expirar uma assinatura ativa.");
 
         Status = StatusAssinatura.Expirada;
+    }
+
+    /// <summary>Chamado uma única vez, logo após FnCriar, sempre com o EmpresaId do Cliente dono desta assinatura.</summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId != 0)
+            throw new DomainException("Esta assinatura já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        EmpresaId = empresaId;
     }
 }

@@ -27,8 +27,13 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AuthResponse>> FnRegistrar(RegistrarRequest request, CancellationToken ct) =>
         Ok(await _service.FnRegistrarAsync(request, ct));
 
-    /// <summary>POST /api/auth/login</summary>
+    /// <summary>POST /api/auth/login — login normal (dono/barbeiro/cliente de UMA barbearia, resolvida pelo header X-Empresa-Slug, ver EmpresaResolverMiddleware).</summary>
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> FnLogin(LoginRequest request, CancellationToken ct) =>
         Ok(await _service.FnLoginAsync(request, ct));
+
+    /// <summary>POST /api/auth/login-admin — login do SuperAdmin (dono da plataforma, gerencia as barbearias em si, ver EmpresasController). Não usa X-Empresa-Slug.</summary>
+    [HttpPost("login-admin")]
+    public async Task<ActionResult<AuthResponse>> FnLoginSuperAdmin(LoginRequest request, CancellationToken ct) =>
+        Ok(await _service.FnLoginSuperAdminAsync(request, ct));
 }

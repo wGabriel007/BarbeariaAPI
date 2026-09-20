@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<ISolicitacaoPlanoRepository, SolicitacaoPlanoRepository>();
         services.AddScoped<IConfiguracaoSiteRepository, ConfiguracaoSiteRepository>();
         services.AddScoped<IPremioRankingRepository, PremioRankingRepository>();
+        services.AddScoped<IEmpresaRepository, EmpresaRepository>();
 
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
 

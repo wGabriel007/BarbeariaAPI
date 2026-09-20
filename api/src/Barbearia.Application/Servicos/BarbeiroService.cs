@@ -55,6 +55,7 @@ public class BarbeiroService
             _clientes.FnRemover(clienteVinculado);
 
         var barbeiro = Barbeiro.FnCriar(request.UsuarioId, request.Telefone);
+        barbeiro.FnAtribuirEmpresa(usuario.EmpresaId!.Value);
 
         await _barbeiros.FnAdicionarAsync(barbeiro, ct);
         await _uow.FnSalvarAsync(ct);

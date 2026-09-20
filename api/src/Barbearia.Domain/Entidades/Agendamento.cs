@@ -23,6 +23,9 @@ public class Agendamento : AuditableEntity
     /// </summary>
     public string? MensagemResposta { get; private set; }
 
+    /// <summary>Barbearia (Empresa) dona deste agendamento — sempre igual ao EmpresaId do Cliente (ver FnAtribuirEmpresa).</summary>
+    public long EmpresaId { get; private set; }
+
     private Agendamento()
     {
     }
@@ -179,5 +182,17 @@ public class Agendamento : AuditableEntity
         if (Status != esperado)
             throw new DomainException(
                 $"Não é possível executar '{operacao}': o agendamento está com status {Status}, esperado {esperado}.");
+    }
+
+    /// <summary>Chamado uma única vez, logo após FnCriar/FnSolicitar, sempre com o EmpresaId do Cliente que pede o agendamento.</summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId != 0)
+            throw new DomainException("Este agendamento já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        EmpresaId = empresaId;
     }
 }

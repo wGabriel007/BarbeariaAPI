@@ -30,6 +30,18 @@ CREATE TABLE IF NOT EXISTS premios_ranking (
   CONSTRAINT uq_premios_ranking_mes_ano_posicao UNIQUE (mes, ano, posicao)
 );
 
-CREATE TRIGGER trg_premios_ranking_atualizado
-  BEFORE UPDATE ON premios_ranking
-  FOR EACH ROW EXECUTE FUNCTION atualizar_timestamp();
+-- CREATE TRIGGER não tem "IF NOT EXISTS" no Postgres (só CREATE OR REPLACE
+-- TRIGGER, a partir do PG 14+, mas nem toda instalação já está nessa
+-- versão) — confere na mão pra não falhar tentando criar de novo um
+-- gatilho que já existe (ex.: banco criado direto do 01_schema.sql, que já
+-- vem com este gatilho, mas com migracoes_aplicadas vazia).
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_premios_ranking_atualizado'
+  ) THEN
+    CREATE TRIGGER trg_premios_ranking_atualizado
+      BEFORE UPDATE ON premios_ranking
+      FOR EACH ROW EXECUTE FUNCTION atualizar_timestamp();
+  END IF;
+END $$;

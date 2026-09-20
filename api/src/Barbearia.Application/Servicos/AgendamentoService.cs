@@ -37,7 +37,7 @@ public class AgendamentoService
 
     public async Task<AgendamentoResponse> FnCriarAsync(CriarAgendamentoRequest request, CancellationToken ct = default)
     {
-        _ = await _clientes.FnObterPorIdAsync(request.ClienteId, ct)
+        var cliente = await _clientes.FnObterPorIdAsync(request.ClienteId, ct)
             ?? throw NotFoundException.FnPara("Cliente", request.ClienteId);
 
         _ = await _barbeiros.FnObterPorIdAsync(request.BarbeiroId, ct)
@@ -62,6 +62,7 @@ public class AgendamentoService
         var agendamento = Agendamento.FnCriar(
             request.ClienteId, request.BarbeiroId, request.ServicoId,
             inicio, fim, precoCobrado, request.AssinaturaId, request.Observacoes);
+        agendamento.FnAtribuirEmpresa(cliente.EmpresaId);
 
         await _agendamentos.FnAdicionarAsync(agendamento, ct);
 
@@ -115,6 +116,7 @@ public class AgendamentoService
 
         var agendamento = Agendamento.FnSolicitar(
             cliente.Id, request.BarbeiroId, request.ServicoId, inicio, fim, servico.Preco, observacoes: request.Observacoes);
+        agendamento.FnAtribuirEmpresa(cliente.EmpresaId);
 
         await _agendamentos.FnAdicionarAsync(agendamento, ct);
         await _uow.FnSalvarAsync(ct);
@@ -139,6 +141,7 @@ public class AgendamentoService
             ?? throw NotFoundException.FnPara("Usuario", usuarioId);
 
         cliente = Cliente.FnCriar(usuario.NomeCompleto, telefone: null, email: usuario.Email, usuarioId: usuarioId);
+        cliente.FnAtribuirEmpresa(usuario.EmpresaId!.Value);
         await _clientes.FnAdicionarAsync(cliente, ct);
         await _uow.FnSalvarAsync(ct); // precisa do Id gerado antes de usar cliente.Id no Agendamento
 
@@ -452,6 +455,7 @@ public class AgendamentoService
             agendamento.PrecoCobrado,
             FormaPagamento.Dinheiro,
             agendamentoId: agendamento.Id);
+        pagamento.FnAtribuirEmpresa(agendamento.EmpresaId);
 
         await _pagamentos.FnAdicionarAsync(pagamento, ct);
         await _uow.FnSalvarAsync(ct);

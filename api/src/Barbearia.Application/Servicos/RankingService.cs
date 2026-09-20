@@ -22,6 +22,7 @@ public class RankingService
     private readonly IClienteRepository _clientes;
     private readonly IUsuarioRepository _usuarios;
     private readonly IPremioRankingRepository _premios;
+    private readonly ICurrentTenantService _tenant;
     private readonly IUnitOfWork _uow;
 
     public RankingService(
@@ -29,12 +30,14 @@ public class RankingService
         IClienteRepository clientes,
         IUsuarioRepository usuarios,
         IPremioRankingRepository premios,
+        ICurrentTenantService tenant,
         IUnitOfWork uow)
     {
         _agendamentos = agendamentos;
         _clientes = clientes;
         _usuarios = usuarios;
         _premios = premios;
+        _tenant = tenant;
         _uow = uow;
     }
 
@@ -99,7 +102,11 @@ public class RankingService
             if (existente is not null)
                 existente.FnAtualizarDescricao(item.Descricao);
             else
-                await _premios.FnAdicionarAsync(PremioRanking.FnCriar(mes, ano, item.Posicao, item.Descricao), ct);
+            {
+                var novoPremio = PremioRanking.FnCriar(mes, ano, item.Posicao, item.Descricao);
+                novoPremio.FnAtribuirEmpresa(_tenant.EmpresaId!.Value);
+                await _premios.FnAdicionarAsync(novoPremio, ct);
+            }
         }
 
         // Posição que estava configurada mas não veio mais no request:

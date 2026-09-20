@@ -13,6 +13,9 @@ public class Pagamento : AuditableEntity
     public StatusPagamento Status { get; private set; }
     public DateTimeOffset? PagoEm { get; private set; }
 
+    /// <summary>Barbearia (Empresa) dona deste pagamento — sempre igual ao EmpresaId do Cliente (ver FnAtribuirEmpresa).</summary>
+    public long EmpresaId { get; private set; }
+
     private Pagamento()
     {
     }
@@ -77,5 +80,17 @@ public class Pagamento : AuditableEntity
             throw new DomainException("Só é possível reembolsar um pagamento que já foi pago.");
 
         Status = StatusPagamento.Reembolsado;
+    }
+
+    /// <summary>Chamado uma única vez, logo após FnCriar, sempre com o EmpresaId do Cliente dono deste pagamento.</summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId != 0)
+            throw new DomainException("Este pagamento já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        EmpresaId = empresaId;
     }
 }

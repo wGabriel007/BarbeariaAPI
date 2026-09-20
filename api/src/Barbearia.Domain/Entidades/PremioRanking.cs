@@ -28,6 +28,9 @@ public class PremioRanking : AuditableEntity
 
     public string Descricao { get; private set; } = string.Empty;
 
+    /// <summary>Barbearia (Empresa) dona deste prêmio — ver Usuario.EmpresaId e FnAtribuirEmpresa.</summary>
+    public long EmpresaId { get; private set; }
+
     private PremioRanking()
     {
     }
@@ -61,5 +64,17 @@ public class PremioRanking : AuditableEntity
             throw new DomainException("Descrição do prêmio é obrigatória.");
 
         Descricao = novaDescricao.Trim();
+    }
+
+    /// <summary>Chamado uma única vez, logo após FnCriar — ver Usuario.FnAtribuirEmpresa.</summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId != 0)
+            throw new DomainException("Este prêmio já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        EmpresaId = empresaId;
     }
 }

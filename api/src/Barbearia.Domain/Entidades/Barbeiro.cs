@@ -21,6 +21,9 @@ public class Barbeiro : AuditableEntity
     /// </summary>
     public bool Ausente { get; private set; }
 
+    /// <summary>Barbearia (Empresa) dona deste cadastro — sempre igual ao EmpresaId do Usuario ligado (ver FnAtribuirEmpresa).</summary>
+    public long EmpresaId { get; private set; }
+
     /// <summary>
     /// Apresentação profissional self-service (ver FnAtualizarPerfil) —
     /// exibida na aba "Sobre a barbearia" (ver paginas/SobreABarbearia.jsx).
@@ -101,6 +104,18 @@ public class Barbeiro : AuditableEntity
     public void FnAtivar() => Status = StatusRegistro.Ativo;
     public void FnInativar() => Status = StatusRegistro.Inativo;
     public void FnBloquear() => Status = StatusRegistro.Bloqueado;
+
+    /// <summary>Chamado uma única vez, logo após FnCriar, sempre com o EmpresaId do Usuario promovido — ver BarbeiroService.FnPromoverAsync.</summary>
+    public void FnAtribuirEmpresa(long empresaId)
+    {
+        if (EmpresaId != 0)
+            throw new DomainException("Este barbeiro já pertence a uma barbearia.");
+
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        EmpresaId = empresaId;
+    }
 
     /// <summary>Bio/Especialidade são opcionais e livres — só cortamos o que passar do tamanho da coluna no banco, nunca lançamos por "campo vazio".</summary>
     public void FnAtualizarPerfil(string? bio, string? especialidade)

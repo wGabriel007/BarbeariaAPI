@@ -12,7 +12,12 @@ public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
         builder.Property(c => c.CriadoEm).HasDefaultValueSql("now()").ValueGeneratedOnAdd();
         builder.Property(c => c.AtualizadoEm).HasDefaultValueSql("now()").ValueGeneratedOnAddOrUpdate();
 
-        builder.HasIndex(c => c.Cpf).IsUnique();
+        // CPF único DENTRO de cada barbearia — a mesma pessoa pode ser
+        // cliente de duas barbearias diferentes na plataforma (ver
+        // ux_clientes_empresa_cpf em 13_migracao_multi_barbearia.sql).
+        builder.HasIndex(c => new { c.EmpresaId, c.Cpf })
+            .IsUnique()
+            .HasDatabaseName("ux_clientes_empresa_cpf");
         builder.HasIndex(c => c.Telefone); // não único (ver ix_clientes_telefone no 01_schema.sql)
 
         // 1:1 opcional com Usuario — diferente de Barbeiro (que sempre

@@ -19,6 +19,7 @@ public class UsuarioService
     private readonly IPasswordHasher _hasher;
     private readonly IArmazenamentoArquivos _armazenamento;
     private readonly IClienteRepository _clientes;
+    private readonly ICurrentTenantService _tenant;
     private readonly IUnitOfWork _uow;
 
     public UsuarioService(
@@ -26,12 +27,14 @@ public class UsuarioService
         IPasswordHasher hasher,
         IArmazenamentoArquivos armazenamento,
         IClienteRepository clientes,
+        ICurrentTenantService tenant,
         IUnitOfWork uow)
     {
         _repositorio = repositorio;
         _hasher = hasher;
         _armazenamento = armazenamento;
         _clientes = clientes;
+        _tenant = tenant;
         _uow = uow;
     }
 
@@ -48,8 +51,19 @@ public class UsuarioService
         if (request.Tipo == TipoUsuario.Barbeiro)
             throw new DomainException("Não é possível criar uma conta já como Barbeiro — promova um usuário Comum existente na tela Barbeiros.");
 
+        // Nunca pela tela de "Usuários" de uma barbearia — SuperAdmin é o
+        // dono da PLATAFORMA (todas as barbearias, ver TipoUsuario), não
+        // um papel de uma barbearia específica. Sem esta checagem, um
+        // Admin mal-intencionado poderia se dar (ou dar a alguém) acesso
+        // de SuperAdmin — o próprio Usuario.FnAtribuirEmpresa logo abaixo
+        // também recusa isso (defesa em profundidade), mas a mensagem
+        // aqui é a amigável, pensada pra esse caso específico.
+        if (request.Tipo == TipoUsuario.SuperAdmin)
+            throw new DomainException("Não é possível criar uma conta SuperAdmin por aqui.");
+
         var hash = _hasher.FnHash(request.Senha);
         var usuario = Usuario.FnCriar(request.NomeCompleto, request.Email, hash, request.Tipo);
+        usuario.FnAtribuirEmpresa(_tenant.EmpresaId!.Value);
 
         await _repositorio.FnAdicionarAsync(usuario, ct);
         await _uow.FnSalvarAsync(ct);

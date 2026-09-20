@@ -27,13 +27,14 @@ public class AssinaturaService
 
     public async Task<AssinaturaResponse> FnCriarAsync(CriarAssinaturaRequest request, CancellationToken ct = default)
     {
-        _ = await _clientes.FnObterPorIdAsync(request.ClienteId, ct)
+        var cliente = await _clientes.FnObterPorIdAsync(request.ClienteId, ct)
             ?? throw NotFoundException.FnPara("Cliente", request.ClienteId);
 
         _ = await _planos.FnObterPorIdAsync(request.PlanoId, ct)
             ?? throw NotFoundException.FnPara("Plano", request.PlanoId);
 
         var assinatura = Assinatura.FnCriar(request.ClienteId, request.PlanoId, request.DataInicio, request.DataVencimento);
+        assinatura.FnAtribuirEmpresa(cliente.EmpresaId);
 
         await _assinaturas.FnAdicionarAsync(assinatura, ct);
         await _uow.FnSalvarAsync(ct);

@@ -4,19 +4,29 @@ using Barbearia.Domain.Comum;
 namespace Barbearia.Domain.Entidades;
 
 /// <summary>
-/// Configuração visual do site — UMA linha só (singleton, Id sempre
-/// IdUnico), criada pela migração (ver 09_migracao_configuracao_site.sql)
-/// e nunca inserida pela aplicação; por isso não tem um "Criar()" nem
-/// entra em nenhum IRepositorio&lt;T&gt; genérico (ver IConfiguracaoSiteRepository,
-/// que só sabe FnObterAsync — não existe "adicionar" nem "listar").
+/// Configuração visual do site — UMA linha POR BARBEARIA (Empresa) desde
+/// a introdução do multi-tenant (antes disso era uma linha global só,
+/// ver comentário antigo sobre "IdUnico" — ficou pra trás junto com a
+/// migração 14_migracao_multi_barbearia.sql). Continua não tendo
+/// "ListarAsync": cada requisição só enxerga a linha da PRÓPRIA barbearia
+/// (ver EmpresaId e o HasQueryFilter em BarbeariaDbContext), então
+/// IConfiguracaoSiteRepository.FnObterAsync() já devolve a linha certa
+/// sozinho, sem precisar escolher qual.
+///
+/// Nasce junto com a Empresa (ver ConfiguracaoSite.FnCriarPadrao, chamada
+/// por EmpresaService.FnCriarAsync) — a aplicação passou a inserir essa
+/// linha, uma vez por barbearia nova, o que antes só a migração fazia.
 ///
 /// Só Admin altera (ver ConfiguracaoSiteService/Controller); qualquer
 /// pessoa — inclusive deslogada, na tela de FnLogin — só LÊ, pra já
-/// mostrar a marca certa da barbearia antes mesmo de entrar.
+/// mostrar a marca certa da barbearia antes mesmo de entrar (ver
+/// EmpresaResolverMiddleware, que resolve QUAL barbearia mesmo sem
+/// token nenhum, a partir do link/slug).
 /// </summary>
 public class ConfiguracaoSite
 {
-    public const long IdUnico = 1;
+    /// <summary>Barbearia (Empresa) dona desta configuração — ver Usuario.EmpresaId.</summary>
+    public long EmpresaId { get; private set; }
 
     /// <summary>
     /// Limite da galeria (ver FnAdicionarFoto) — o bastante pra mostrar o
@@ -36,7 +46,7 @@ public class ConfiguracaoSite
 
     private static readonly Regex FormatoHex = new("^#[0-9a-fA-F]{6}$", RegexOptions.Compiled);
 
-    public long Id { get; private set; } = IdUnico;
+    public long Id { get; private set; }
     public string NomeBarbearia { get; private set; } = "Barbearia";
     public string? LogoUrl { get; private set; }
 
@@ -65,6 +75,28 @@ public class ConfiguracaoSite
 
     private ConfiguracaoSite()
     {
+    }
+
+    /// <summary>
+    /// Cria a configuração inicial de uma barbearia nova — chamada uma
+    /// única vez, na hora em que a Empresa nasce (ver
+    /// EmpresaService.FnCriarAsync), com o nome que o dono escolheu pra
+    /// aparecer no site/login; tudo o mais (logo, cor, descrição, fotos)
+    /// fica pra ele configurar depois na aba de aparência.
+    /// </summary>
+    public static ConfiguracaoSite FnCriarPadrao(long empresaId, string nomeBarbearia)
+    {
+        if (empresaId <= 0)
+            throw new DomainException("EmpresaId inválido.");
+
+        if (string.IsNullOrWhiteSpace(nomeBarbearia))
+            throw new DomainException("Nome da barbearia é obrigatório.");
+
+        return new ConfiguracaoSite
+        {
+            EmpresaId = empresaId,
+            NomeBarbearia = nomeBarbearia.Trim()
+        };
     }
 
     public void FnAtualizar(string nomeBarbearia, string? corPrimaria)

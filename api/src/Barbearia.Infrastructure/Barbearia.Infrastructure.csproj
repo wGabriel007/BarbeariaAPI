@@ -27,19 +27,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Remove="..\..\..\database\03_migracao_tipo_comum.sql" />
-    <EmbeddedResource Remove="..\..\..\database\04_migracao_solicitacao_agendamento.sql" />
-    <EmbeddedResource Remove="..\..\..\database\05_migracao_ausencia_barbeiro.sql" />
-    <EmbeddedResource Remove="..\..\..\database\06_migracao_solicitacao_plano.sql" />
-    <EmbeddedResource Remove="..\..\..\database\07_migracao_categoria_servico.sql" />
-    <EmbeddedResource Remove="..\..\..\database\08_migracao_perfil_usuario.sql" />
-    <EmbeddedResource Remove="..\..\..\database\09_migracao_configuracao_site.sql" />
-    <EmbeddedResource Remove="..\..\..\database\10_migracao_ranking.sql" />
-    <EmbeddedResource Remove="..\..\..\database\11_migracao_data_vencimento.sql" />
-    <EmbeddedResource Remove="..\..\..\database\12_migracao_perfil_barbearia.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <!-- EF Core "core" (DbContext, LINQ, change tracking) -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
     <!-- Provider específico do Postgres (traduz LINQ -> SQL do Postgres, mapeia DateOnly/TimeOnly/decimal etc.) -->
