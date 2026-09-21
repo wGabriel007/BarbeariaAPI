@@ -130,7 +130,7 @@ public class AutenticacaoService
 
         var token = _tokenGenerator.FnGerarToken(usuario);
         var usuarioResponse = new UsuarioResponse(
-            usuario.Id, usuario.NomeCompleto, usuario.Email, usuario.Telefone, usuario.FotoUrl, usuario.Tipo, usuario.Status, ehCliente: false);
+            usuario.Id, usuario.NomeCompleto, usuario.Email, usuario.Telefone, usuario.FotoUrl, usuario.Tipo, usuario.Status, EhCliente: false);
         return new AuthResponse(token, usuarioResponse);
     }
 
